@@ -1,4 +1,5 @@
 from flask import Flask, render_template, url_for, request, redirect, make_response, session
+#from flask.ext.session import Session
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from ChainMeUp.CardReader import CardReader
@@ -32,6 +33,8 @@ class Person(db.Model):
 @app.route('/', methods=['GET'])
 def index():
 
+    session.clear()
+
     if request.method == "GET":
         return render_template('index.html')
 
@@ -42,8 +45,27 @@ def login():
         return render_template('login.html')
 
     if request.method == 'POST':
-        person = Person.query.all()
-        return render_template('main.html', people=person)
+
+        #person = Person.query.all()
+
+        pubkey = cardReader.get_Pub()
+        #person = Person.query.filter_by(pubkey = pubkey.hex())
+        person = Person.query.get(pubkey.hex())
+
+        print(cardReader.auth(pubkey))
+
+        if person is not None:
+            if cardReader.auth(pubkey):
+
+                #person = Person.query.all()
+                session['pubkey'] = pubkey
+                return render_template('main.html', person=person)
+
+            else:
+                return "Error, wrong card on key reader"
+        else:
+            return "PubKey not registered"
+
 
 
 @app.route("/register", methods=['POST', 'GET'])
@@ -85,6 +107,11 @@ def register():
         people = Person.query.all()
         return render_template('main.html', people=people)
 
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    session.clear()
+    return render_template('index.html')
 
 ''''     
 def fetch_posts():

@@ -7,36 +7,19 @@
 {% block body %}
 <div class="content">
     <h1 style="text-align: center">Chain me up</h1>
-    {% if people|length < 1 %}
-        <h4 style="text-align: center">No contacts yet.</h4>
-    {% else %}
-    <table>
-        <tr>
-            <th>[DBG]: PubKey</th>
-            <th>Firstname</th>
-            <th>Lastname</th>
-            <th>Phone Nr</th>
-            <th>E-Mail</th>
-            <th>Date Created</th>
 
-        </tr>
-        {% for person in people %}
-        <tr>
-            <td>{{ person.pubkey }}</td>
-            <td>{{ person.firstname }}</td>
-            <td>{{ person.lastname }}</td>
-            <td>{{ person.phoneNr }}</td>
-            <td>{{ person.email }}</td>
-
-            <td>{{ person.date_created.date() }}</td>
-
-        </tr>
-        {% endfor %}
-        <a href="/index.html">Logout</a>
-    </table>
-    {% endif %}
+    <a>Hello, {{ person.firstname }} {{ person.lastname }}</a>
+    <a>Your data:</a>
+       <!--
+    <a>{{ person.pubkey }}</a>
+    <a>Phone Nr: {{ person.phoneNr }}</a>
+    <a>E-Mail: {{ person.email }}</a>
+  <a>Date Created: {{ person.date_created.date() }}</a> -->
+    <a href="/index.html">Logout</a>
     <br>
     <br>
+
+    <!--
     <h1>DEBUG Fields</h1>
     <div class="form">
         <form action="/" method="POST">
@@ -49,5 +32,6 @@
             <input type="submit" value="Add contact">
         </form>
     </div>
+    -->
 </div>
 {% endblock %}
