@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Chain me up</title>
+{% endblock %}
+
+{% block body %}
+<div class="content">
+    <h1 style="text-align: center">Chain me up</h1>
+
+    <a>Hello, {{ person.firstname }} {{ person.lastname }}</a>
+    <a>Your data:</a>
+
+    <p>{{ person.pubkey }}</p>
+    <p>Phone Nr: {{ person.phonenr }}</p>
+    <p>E-Mail: {{ person.email }}</p>
+  <p>Date Created: {{ person.date_created.date() }}</p><br>
+    <a href="/">Logout</a>
+    <br>
+    <br>
+
+    <!--
+    <h1>DEBUG Fields</h1>
+    <div class="form">
+        <form action="/" method="POST">
+            <input type="text" name="pubkey" id="pubkey">
+            <input type="text" name="lastname" id="lastname">
+            <input type="text" name="firstname" id="firstname">
+            <input type="text" name="email" id="email">
+            <input type="text" name="phonenr" id="phonenr">
+
+            <input type="submit" value="Add contact">
+        </form>
+    </div>
+    -->
+</div>
+{% endblock %}
