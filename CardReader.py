@@ -5,7 +5,6 @@ and provides the needed functions to interact with the Infineon Blockchain Secur
 '''
 
 import blocksec2go
-import sys
 import threading
 import hashlib
 import os
@@ -30,6 +29,10 @@ class CardReader(object):
             self.cardmonitor, self.cardobserver = observer.start()
             sleep(1)
             blocksec2go.add_callback(connect=self.connected, disconnect=self.disconnected)
+            try:
+                self.reader = self.get_reader()
+            except:
+                pass
             while True:
                 sleep(self.interval)
         except:
@@ -64,6 +67,7 @@ class CardReader(object):
             print("Connected\r\n")
             self.reader = self.get_reader()
             self.activate_card()
+
             # if self.current_pub is None and self.last_pub is None:
             #    self.last_pub = self.current_pub = self.read_public_key(1)
             #else:
@@ -72,8 +76,8 @@ class CardReader(object):
 
             self.current_pub = self.read_public_key(1)
             if self.current_pub is not None:
-                print("Public key read: %s with a length of: %d" % (str(self.current_pub.hex()) + len(self.current_pub)))
-        except RuntimeError as rex:
+                print("Public key read: %s with a length of: %d" % (str(self.current_pub.hex()), len(self.current_pub)))
+        except RuntimeError:
             print("Card is invalid!")
             sleep(1)
             self.restart()
@@ -87,9 +91,12 @@ class CardReader(object):
     # Returns true if the card was initiated
     def initCard(self):
         try:
-            key_id = blocksec2go.generate_keypair(self.reader)
-            print("Generated key on slot: %s" % str(key_id))
-            return True
+            if self.reader is not None:
+                key_id = blocksec2go.generate_keypair(self.reader)
+                print("Generated key on slot: %s" % str(key_id))
+                return True
+            else:
+                return False
         except:
             return False
 
@@ -112,22 +119,35 @@ class CardReader(object):
 
     # Returns last read public key
     def get_Pub_hex(self):
-        return self.current_pub.hex()
+        if self.current_pub is None:
+            try:
+                self.current_pub = self.read_public_key(1)
+            except:
+                return None
+        try:
+            return self.current_pub.hex()
+        except:
+            return None
 
     def get_Pub(self):
+        if self.current_pub is None:
+            try:
+                self.current_pub = self.read_public_key(1)
+            except:
+                return None
         return self.current_pub
 
     def auth(self, pub):
             return self.verifyPub(pub)
 
-    def generateSignature(self,hash=None):
+    def generateSignature(self, hash=None):
         if hash is None:
             hash = (hashlib.sha256(b'Hash' + bytearray(os.urandom(10000)))).digest()
         try:
             global_counter, counter, signature = blocksec2go.generate_signature(self.reader, 1, hash)
-            return hash,signature
+            return hash, signature
         except:
-            return None,None
+            return None, None
 
     def verifyPub(self, pub, hash=None, signature=None):
         # Generate random hash
@@ -139,8 +159,8 @@ class CardReader(object):
             print("Verification failed because of error: %s" % str(ex))
             return False
 
-if '__main__' == __name__:
-    CardReader = CardReader()
-    print("Press enter to authenticate")
-    sys.stdin.read(1)
-    print(CardReader.auth(CardReader.get_Pub()))
+#if '__main__' == __name__:
+#    CardReader = CardReader()
+#    print("Press enter to authenticate")
+#    sys.stdin.read(1)
+#    print(CardReader.auth(CardReader.get_Pub()))
