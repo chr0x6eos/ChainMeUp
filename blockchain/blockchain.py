@@ -1,88 +1,99 @@
-from __future__ import annotations
-import hashlib
-import datetime
-import copy
+from hashlib import sha256
+import json
+import time
 
 
-class MinimalBlock():
-    def __init__(self, index, timestamp, data, previous_hash):
+class Block:
+    def __init__(self, index, transactions, timestamp, previous_hash):
         self.index = index
+        self.transactions = transactions
         self.timestamp = timestamp
-        self.data = data
         self.previous_hash = previous_hash
-        self.hash = self.hashing()
 
-    def hashing(self):
-        key = hashlib.sha256()
-        key.update(str(self.index).encode('utf-8'))
-        key.update(str(self.timestamp).encode('utf-8'))
-        key.update(str(self.data).encode('utf-8'))
-        key.update(str(self.previous_hash).encode('utf-8'))
-        return key.hexdigest()
+    def compute_hash(self):
+        block_string = json.dumps(self.__dict__, sort_keys=True)
+        return sha256(block_string.encode()).hexdigest()
 
-    def __repr__(self):
-        return f"""
-                Block: {self.index} {self.timestamp}
-                Data:  {self.data}
-                Hash:  {self.hash}
-                PHash: {self.previous_hash}"""
+class Blockchain:
+    difficulty = 2
 
+    def __init__(self):
+        self.unconfirmed_transactions = []  # data yet to get into blockchain
+        self.chain = []
+        self.create_genesis_block()
 
-class MinimalChain():
-    def __init__(self):  # initialize when creating a chain
-        self.blocks = [self.get_genesis_block()]
+    def create_genesis_block(self):
+        """
+        A function to generate genesis block and appends it to
+        the chain. The block has index 0, previous_hash as 0, and
+        a valid hash.
+        """
+        genesis_block = Block(0, [], time.time(), "0")
+        genesis_block.hash = genesis_block.compute_hash()
+        self.chain.append(genesis_block)
 
-    def get_genesis_block(self):
-        return MinimalBlock(0,
-                            datetime.datetime.utcnow(),
-                            'Genesis',
-                            'arbitrary')
+    @property
+    def last_block(self):
+        return self.chain[-1]
 
-    def add_block(self, data):
-        self.blocks.append(MinimalBlock(len(self.blocks),
-                                        datetime.datetime.utcnow(),
-                                        data,
-                                        self.blocks[len(self.blocks) - 1].hash))
+    def proof_of_work(self, block):
+        """
+        Function that tries different values of nonce to get a hash
+        that satisfies our difficulty criteria.
+        """
+        block.nonce = 0
 
-    def get_chain_size(self):  # exclude genesis block
-        return len(self.blocks) - 1
+        computed_hash = block.compute_hash()
+        while not computed_hash.startswith('0' * Blockchain.difficulty):
+            block.nonce += 1
+            computed_hash = block.compute_hash()
 
-    def verify(self, verbose=True):
-        flag = True
-        for i in range(1, len(self.blocks)):
-            if self.blocks[i].index != i:
-                flag = False
-                if verbose:
-                    print(f'Wrong block index at block {i}.')
-            if self.blocks[i - 1].hash != self.blocks[i].previous_hash:
-                flag = False
-                if verbose:
-                    print(f'Wrong previous hash at block {i}.')
-            if self.blocks[i].hash != self.blocks[i].hashing():
-                flag = False
-                if verbose:
-                    print(f'Wrong hash at block {i}.')
-            if self.blocks[i - 1].timestamp >= self.blocks[i].timestamp:
-                flag = False
-                if verbose:
-                    print(f'Backdating at block {i}.')
-        return flag
+        return computed_hash
 
-    def fork(self, head='latest'):
-        if head in ['latest', 'whole', 'all']:
-            return copy.deepcopy(self)  # deepcopy since they are mutable
-        else:
-            c = copy.deepcopy(self)
-            c.blocks = c.blocks[0:head + 1]
-            return c
+    def add_block(self, block, proof):
+        """
+        A function that adds the block to the chain after verification.
+        """
+        previous_hash = self.last_block.hash
 
-    def get_root(self, chain_2):
-        min_chain_size = min(self.get_chain_size(), chain_2.get_chain_size())
-        for i in range(1, min_chain_size + 1):
-            if self.blocks[i] != chain_2.blocks[i]:
-                return self.fork(i - 1)
-        return self.fork(min_chain_size)
+        if previous_hash != block.previous_hash:
+            return False
 
-    def update_chain(self, _chain: MinimalChain):
-        if _chain.verify():
-            self.blocks = _chain.blocks
+        if not self.is_valid_proof(block, proof):
+            return False
+
+        block.hash = proof
+        self.chain.append(block)
+        return True
+
+    def is_valid_proof(self, block, block_hash):
+        """
+        Check if block_hash is valid hash of block and satisfies
+        the difficulty criteria.
+        """
+        return (block_hash.startswith('0' * Blockchain.difficulty) and
+                block_hash == block.compute_hash())
+
+    def add_new_transaction(self, transaction):
+        self.unconfirmed_transactions.append(transaction)
+
+    def mine(self):
+        """
+        This function serves as an interface to add the pending
+        transactions to the blockchain by adding them to the block
+        and figuring out Proof of Work.
+        """
+        if not self.unconfirmed_transactions:
+            return False
+
+        last_block = self.last_block
+
+        new_block = Block(index=last_block.index + 1,
+                          transactions=self.unconfirmed_transactions,
+                          timestamp=time.time(),
+                          previous_hash=last_block.hash)
+
+        proof = self.proof_of_work(new_block)
+        self.add_block(new_block, proof)
+        self.unconfirmed_transactions = []
+        return new_block.index
