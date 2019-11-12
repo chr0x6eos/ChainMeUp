@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Chain me up</title>
+{% endblock %}
+
+
+{% block body %}
+<div class="content">
+    <h1 style="text-align: center">Chain me up</h1>
+    {% if people|length < 1 %}
+        <h4 style="text-align: center">No contacts yet.</h4>
+    {% else %}
+    <table>
+        <tr>
+            <th>[DBG]: PubKey</th>
+            <th>Firstname</th>
+            <th>Lastname</th>
+            <th>Phone Nr</th>
+            <th>E-Mail</th>
+            <th>Date Created</th>
+
+        </tr>
+        {% for person in people %}
+        <tr>
+            <td>{{ person.pubkey }}</td>
+            <td>{{ person.firstname }}</td>
+            <td>{{ person.lastname }}</td>
+            <td>{{ person.phoneNr }}</td>
+            <td>{{ person.email }}</td>
+
+            <td>{{ person.date_created.date() }}</td>
+
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <div class="form">
+        <form action="/" method="POST">
+            <input type="text" name="pubkey" id="pubkey">
+            <input type="text" name="lastname" id="lastname">
+            <input type="text" name="firstname" id="firstname">
+            <input type="text" name="email" id="email">
+            <input type="text" name="phonenr" id="phonenr">
+
+            <input type="submit" value="Add contact">
+        </form>
+    </div>
+</div>
+{% endblock %}
