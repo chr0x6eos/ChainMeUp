@@ -28,10 +28,12 @@ class Person(db.Model):
 @app.route('/', methods=['GET'])
 def index():
 
+    response = make_response(render_template('index.html'))
+    response.set_cookie('pk', path='/', expires=0)
     session.clear()
 
     if request.method == "GET":
-        return render_template('index.html')
+        return response
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -52,9 +54,9 @@ def login():
         if person is not None:
             if CardReader.auth(reader, pubkey):
 
-                #person = Person.query.all()
-                session['pubkey'] = pubkey
-                return render_template('main.html', person=person)
+                response = make_response(render_template('main.html', person=person))
+                response.set_cookie('pk', pubkey)
+                return response
             else:
                 return "Error, wrong card on key reader"
         else:
