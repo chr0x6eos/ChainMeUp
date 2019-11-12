@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+<title>Chain me up</title>
+
+{% endblock %}
+
+{% block body %}
+<h1>Place your card for authentication</h1>
+<h2>Let the card on the reader for at least 5 seconds, otherwise we cannot authenticate you.</h2>
+
+<form action="login" method="POST">
+            <input type="submit" value="Login">
+        </form>
+
+{% endblock %}

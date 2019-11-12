@@ -1,11 +1,11 @@
-from flask import Flask, render_template, url_for, request, redirect
+from flask import Flask, render_template, url_for, request, redirect, make_response, session
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from hashlib import sha256
 import json
 import requests
 
-#from app import app
+# from app import app
 
 CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
 posts = []
@@ -27,10 +27,27 @@ class Person(db.Model):
         return '<People %r>' % self.pubkey
 
 
-@app.route("/", methods=['POST', 'GET'])
+@app.route('/', methods=['GET'])
 def index():
+
+    if request.method == "GET":
+        return render_template('index.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return render_template('login.html')
+
     if request.method == 'POST':
-        # id = db.Column(db.INTEGER, primary_key=True)
+        person = Person.query.all()
+        return render_template('main.html', people=person)
+
+
+@app.route("/register", methods=['POST', 'GET'])
+def register():
+    if request.method == 'POST':
+        #id = db.Column(autoincrement=True, primary_key=True)
         pubkey = request.form['pubkey']
         firstname = request.form['firstname']
         lastname = request.form['lastname']
@@ -39,19 +56,27 @@ def index():
 
         new_person = Person(pubkey=pubkey, firstname=firstname, lastname=lastname, phonenr=phonenr, email=email,
                             date_created=datetime.now())
-
         try:
             db.session.add(new_person)
             db.session.commit()
-            return redirect('/')
+
+            response = make_response(render_template('main.html'))
+            response.set_cookie('pk', pubkey)
+
+            return response
+
         except Exception as ex:
             raise ex
+
+    elif request.method == 'GET':
+        return render_template('register.html')
+
     else:
         people = Person.query.all()
+        return render_template('main.html', people=people)
 
-        return render_template('index.html', people=people)
 
-'''
+''''     
 def fetch_posts():
     get_chain_address = "{}/chain".format(CONNECTED_NODE_ADDRESS)
     response = requests.get(get_chain_address)
@@ -68,7 +93,6 @@ def fetch_posts():
         posts = sorted(content, key=lambda k: k['timestamp'],
                        reverse=True)
 '''
-
 
 if __name__ == "__main__":
     app.run(debug=True)
