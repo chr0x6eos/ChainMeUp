@@ -27,7 +27,6 @@ class Person(db.Model):
 
 @app.route('/', methods=['GET'])
 def index():
-
     #session.clear()
 
     if request.method == "GET":
@@ -41,22 +40,18 @@ def login():
 
     if request.method == 'POST':
         reader = CardReader.initReading()
-        #person = Person.query.all()
 
         pubkey = CardReader.read_public_key(reader,1)
-        person = Person.query.filter_by(pubkey = pubkey.hex())
+
         if pubkey is not None:
             person = Person.query.get(pubkey.hex())
         else:
-            return "Invalid pub!"
+            return "No or invalid pub!"
 
         if person is not None:
             if CardReader.auth(reader, pubkey):
-
-                #person = Person.query.all()
                 #session['pubkey'] = pubkey
                 return render_template('main.html', person=person)
-
             else:
                 return "Error, wrong card on key reader"
         else:
@@ -67,16 +62,16 @@ def login():
 @app.route("/register", methods=['POST', 'GET'])
 def register():
     if request.method == 'POST':
-        #id = db.Column(autoincrement=True, primary_key=True)
-
         reader = CardReader.initReading()
+        if reader is None:
+            return "No reader connected!"
         if not CardReader.initCard(reader):
-            return "Card not writeable"
+            return "Card not writeable or a user is already registered with this card!"
 
         pubkey = CardReader.read_public_key(reader, 1)
 
         if pubkey is None:
-            return "error pubkey"
+            return "No pubkey!"
         else:
             pubkey = pubkey.hex()
             firstname = request.form['firstname']
@@ -109,7 +104,7 @@ def register():
 @app.route('/logout', methods=['GET'])
 def logout():
     session.clear()
-    return render_template('index.html')
+    return render_template('/')
 
 ''''     
 def fetch_posts():
