@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import CardReader
 
+from app import app
 
 CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
 posts = []
