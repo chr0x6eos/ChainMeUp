@@ -16,7 +16,7 @@ class CardReader(object):
 
     cardmonitor = None
     cardobserver = None
-    last_pub = None
+    #last_pub = None
     current_pub = None
     reader = None
 
@@ -64,7 +64,12 @@ class CardReader(object):
             print("Connected\r\n")
             self.reader = self.get_reader()
             self.activate_card()
-            self.last_pub = self.current_pub # Save current pub before overwriting
+            # if self.current_pub is None and self.last_pub is None:
+            #    self.last_pub = self.current_pub = self.read_public_key(1)
+            #else:
+            #    self.last_pub = self.current_pub # Save current pub before overwriting
+            #    self.current_pub = self.read_public_key(1)
+
             self.current_pub = self.read_public_key(1)
             if self.current_pub is not None:
                 print("Public key read: %s with a length of: %d" % (str(self.current_pub.hex()) + len(self.current_pub)))
@@ -107,10 +112,10 @@ class CardReader(object):
 
     # Returns last read public key
     def get_Pub_hex(self):
-        return self.last_pub.hex()
+        return self.current_pub.hex()
 
     def get_Pub(self):
-        return self.last_pub
+        return self.current_pub
 
     def auth(self, pub):
             return self.verifyPub(pub)
