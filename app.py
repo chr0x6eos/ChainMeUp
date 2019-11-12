@@ -2,11 +2,7 @@ from flask import Flask, render_template, url_for, request, redirect, make_respo
 #from flask.ext.session import Session
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from ChainMeUp.CardReader import CardReader
-import blocksec2go
-from hashlib import sha256
-import json
-import requests
+import CardReader
 
 
 CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
@@ -15,8 +11,6 @@ posts = []
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 db = SQLAlchemy(app)
-
-cardReader = CardReader()
 
 class Person(db.Model):
     pubkey = db.Column(db.String(256), primary_key=True)
@@ -33,7 +27,7 @@ class Person(db.Model):
 @app.route('/', methods=['GET'])
 def index():
 
-    session.clear()
+    #session.clear()
 
     if request.method == "GET":
         return render_template('index.html')
@@ -45,20 +39,21 @@ def login():
         return render_template('login.html')
 
     if request.method == 'POST':
-
+        reader = CardReader.initReading()
         #person = Person.query.all()
 
-        pubkey = cardReader.get_Pub()
-        #person = Person.query.filter_by(pubkey = pubkey.hex())
-        person = Person.query.get(pubkey.hex())
-
-        print(cardReader.auth(pubkey))
+        pubkey = CardReader.read_public_key(reader,1)
+        person = Person.query.filter_by(pubkey = pubkey.hex())
+        if pubkey is not None:
+            person = Person.query.get(pubkey.hex())
+        else:
+            return "Invalid pub!"
 
         if person is not None:
-            if cardReader.auth(pubkey):
+            if CardReader.auth(reader, pubkey):
 
                 #person = Person.query.all()
-                session['pubkey'] = pubkey
+                #session['pubkey'] = pubkey
                 return render_template('main.html', person=person)
 
             else:
@@ -73,14 +68,16 @@ def register():
     if request.method == 'POST':
         #id = db.Column(autoincrement=True, primary_key=True)
 
-        if not cardReader.initCard():
+        reader = CardReader.initReading()
+        if not CardReader.initCard(reader):
             return "Card not writeable"
 
-        pubkey = cardReader.get_Pub_hex()
+        pubkey = CardReader.read_public_key(reader, 1)
 
         if pubkey is None:
             return "error pubkey"
         else:
+            pubkey = pubkey.hex()
             firstname = request.form['firstname']
             lastname = request.form['lastname']
             phonenr = request.form['phonenr']
@@ -92,7 +89,7 @@ def register():
             db.session.add(new_person)
             db.session.commit()
 
-            response = make_response(render_template('main.html'))
+            response = make_response(render_template('main.html',person=new_person))
             response.set_cookie('pk', pubkey)
 
             return response
