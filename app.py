@@ -1,10 +1,10 @@
+import os
+
 from flask import Flask, render_template, url_for, request, redirect, make_response, session
 #from flask.ext.session import Session
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import CardReader
-
-from app import app
 
 CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
 posts = []
@@ -27,7 +27,8 @@ class Person(db.Model):
 
 @app.route('/', methods=['GET'])
 def index():
-    #session.clear()
+
+    session.clear()
 
     if request.method == "GET":
         return render_template('index.html')
@@ -50,7 +51,9 @@ def login():
 
         if person is not None:
             if CardReader.auth(reader, pubkey):
-                #session['pubkey'] = pubkey
+
+                #person = Person.query.all()
+                session['pubkey'] = pubkey
                 return render_template('main.html', person=person)
             else:
                 return "Error, wrong card on key reader"
@@ -125,4 +128,14 @@ def fetch_posts():
 '''
 
 if __name__ == "__main__":
+    app.config.update(
+        # Set the secret key to a sufficiently random value
+        SECRET_KEY=os.urandom(24),
+        # Set the session cookie to be secure
+        SESSION_COOKIE_SECURE=True,
+        # Set the session cookie for our app to a unique name
+        SESSION_COOKIE_NAME='ChainMeUP-WebSession',
+        # Set CSRF tokens to be valid for the duration of the session. This assumes you’re using WTF-CSRF protection
+        WTF_CSRF_TIME_LIMIT=None
+    )
     app.run(debug=True)
