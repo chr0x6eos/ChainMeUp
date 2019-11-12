@@ -3,7 +3,6 @@ Created by Simon Possegger on 12.11.2019 as part of the Infineon Hackathon.
 This Class asynchronously reads from the card reader
 and provides the needed functions to interact with the Infineon Blockchain Security 2Go cards.
 '''
-
 import blocksec2go
 import threading
 import hashlib
@@ -159,8 +158,10 @@ class CardReader(object):
             print("Verification failed because of error: %s" % str(ex))
             return False
 
-#if '__main__' == __name__:
-#    CardReader = CardReader()
-#    print("Press enter to authenticate")
-#    sys.stdin.read(1)
-#    print(CardReader.auth(CardReader.get_Pub()))
+'''
+if '__main__' == __name__:
+    CardReader = CardReader()
+    print("Press enter to authenticate")
+    sys.stdin.read(1)
+    print(CardReader.auth(CardReader.get_Pub()))
+'''

@@ -1,11 +1,12 @@
 from flask import Flask, render_template, url_for, request, redirect, make_response, session
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from ChainMeUp.CardReader import CardReader
+import blocksec2go
 from hashlib import sha256
 import json
 import requests
 
-# from app import app
 
 CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
 posts = []
@@ -14,6 +15,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 db = SQLAlchemy(app)
 
+cardReader = CardReader()
 
 class Person(db.Model):
     pubkey = db.Column(db.String(256), primary_key=True)
@@ -48,14 +50,22 @@ def login():
 def register():
     if request.method == 'POST':
         #id = db.Column(autoincrement=True, primary_key=True)
-        pubkey = request.form['pubkey']
-        firstname = request.form['firstname']
-        lastname = request.form['lastname']
-        phonenr = request.form['phonenr']
-        email = request.form['email']
 
-        new_person = Person(pubkey=pubkey, firstname=firstname, lastname=lastname, phonenr=phonenr, email=email,
-                            date_created=datetime.now())
+        if not cardReader.initCard():
+            return "Card not writeable"
+
+        pubkey = cardReader.get_Pub_hex()
+
+        if pubkey is None:
+            return "error pubkey"
+        else:
+            firstname = request.form['firstname']
+            lastname = request.form['lastname']
+            phonenr = request.form['phonenr']
+            email = request.form['email']
+
+            new_person = Person(pubkey=pubkey, firstname=firstname, lastname=lastname, phonenr=phonenr, email=email,
+                                date_created=datetime.now())
         try:
             db.session.add(new_person)
             db.session.commit()
