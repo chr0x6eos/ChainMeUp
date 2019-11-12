@@ -72,7 +72,7 @@ class CardReader(object):
 
             self.current_pub = self.read_public_key(1)
             if self.current_pub is not None:
-                print("Public key read: %s with a length of: %d" % (str(self.current_pub.hex()), len(self.current_pub)))
+                print("Public key read: " + str(self.current_pub.hex()) + " with a length of: " + str(len(self.current_pub.hex())))
         except RuntimeError as rex:
             print("Card is invalid!")
             sleep(1)
