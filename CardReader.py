@@ -72,7 +72,7 @@ class CardReader(object):
 
             self.current_pub = self.read_public_key(1)
             if self.current_pub is not None:
-                print("Public key read: %s with a length of: %d" % (str(self.current_pub.hex()) + len(self.current_pub)))
+                print("Public key read: %s with a length of: %d" % (str(self.current_pub.hex()), len(self.current_pub)))
         except RuntimeError as rex:
             print("Card is invalid!")
             sleep(1)
@@ -112,6 +112,8 @@ class CardReader(object):
 
     # Returns last read public key
     def get_Pub_hex(self):
+        if self.current_pub is None:
+            return None
         return self.current_pub.hex()
 
     def get_Pub(self):
@@ -127,7 +129,7 @@ class CardReader(object):
             global_counter, counter, signature = blocksec2go.generate_signature(self.reader, 1, hash)
             return hash,signature
         except:
-            return None,None
+            return None, None
 
     def verifyPub(self, pub, hash=None, signature=None):
         # Generate random hash
