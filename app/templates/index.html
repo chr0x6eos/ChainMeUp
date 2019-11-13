@@ -6,12 +6,14 @@
 	  display: inline-block;
 	  width: 160px;
 	  text-align: right;
+        margin: 5px;
 	}
 	.switch {
 	  position: relative;
 	  display: inline-block;
 	  width: 60px;
 	  height: 34px;
+        margin: 10px;
 	}
 	.switch input {
 	  opacity: 0;
@@ -71,15 +73,13 @@
 		{% endif %}
   		<span class="slider round"></span>
 	</label>
-<div style="margin: 20px;">
-		<br>
 	{% if filter == True %}
-		<h2>Your connections:</h2>
+		<h2 style="margin-left: 20px">Your connections:</h2>
 	{% else %}
-		<h2>All connections:</h2>
+		<h2 style="margin-left: 20px">All connections:</h2>
 	{% endif %}
 		{% if posts %}
-		<table border="1">
+		<table class="table table-bordered">
 			<th>Lastname</th>
 			<th>Firstname</th>
 			<th>Email</th>
@@ -103,7 +103,6 @@
 {% else %}
 <h3>No connections yet!</h3>
 {% endif %}
-</div>
 
 	<style>
 		.post_box {
