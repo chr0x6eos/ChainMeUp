@@ -297,6 +297,14 @@ def register():
         phonenr = json_object['phonenr']
         email = json_object['email']
 
+        if pubkey is not None:
+            person = Person.query.get(pubkey)
+            if person is not None:
+                # Person already exists
+                return "Person is already registered!"
+        else:
+            return "No public key!"
+
         new_person = Person(pubkey=pubkey, firstname=firstname, lastname=lastname, phonenr=phonenr, email=email,
                                 date_created=datetime.now())
         try:

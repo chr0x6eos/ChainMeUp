@@ -12,7 +12,7 @@ from flask import render_template, redirect, request
 from app import app
 import CardReader
 
-CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
+CONNECTED_NODE_ADDRESS = "http://169.254.62.57:8000"
 
 posts = []
 
@@ -52,10 +52,13 @@ def submit_login():
     new_tx_address = "{}/login".format(CONNECTED_NODE_ADDRESS)
     reader = CardReader.initReading()
     publicOne = CardReader.read_public_key(reader, 1)
-    if CardReader.auth(reader, publicOne):
-        return requests.post(new_tx_address,headers={'Content-type': 'application/json'},json={'pubkey': publicOne.hex()}).text
+    if publicOne is not None:
+        if CardReader.auth(reader, publicOne):
+            return requests.post(new_tx_address,headers={'Content-type': 'application/json'},json={'pubkey': publicOne.hex()}).text
+        else:
+            return "PubKey registered in database."
     else:
-        return "PubKey not found."
+        return "No public key on card."
 
     return redirect('/')
 
