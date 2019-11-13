@@ -72,7 +72,6 @@ def fetch_posts(isFiltered=True):
         posts = sorted(_posts, key=lambda k: k['timestamp'],
                            reverse=True)
 
-
 @app.route('/display')
 def index():
     new_tx_address = "{}/".format(CONNECTED_NODE_ADDRESS)
@@ -182,3 +181,36 @@ def logout():
 
 def timestamp_to_string(epoch_time):
     return datetime.datetime.fromtimestamp(epoch_time).strftime('%H:%M')
+
+@app.route('/graph/graphFile.json')
+def get_graph():
+    nodes = []
+    links = []
+    #meName = posts[0]['one']['lastname'] + " " + posts[0]['one']['firstname']
+    #nodes.append({
+    #    "name": meName,
+    #    "group": posts[0]['one']['publicKey']
+    #})
+    i = 0
+    for post in posts:
+        otherName = post['two']['lastname'] + " " + post['two']['firstname']
+
+        nodes.append({
+            "name": otherName,
+            "group": posts[0]['two']['publicKey']
+        })
+        print(nodes)
+
+        links.append({
+            "source": i,
+            "target": 0,
+            "weight": 2
+        })
+
+        i+=1;
+
+    r = {"nodes": nodes, "links": links}
+
+    print(r)
+
+    return (r)
