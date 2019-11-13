@@ -2,12 +2,9 @@ import datetime
 import json
 import os
 import time
-from hashlib import sha256
-
-import blocksec2go
 
 import requests
-from flask import render_template, redirect, request
+from flask import render_template, redirect, request, session
 
 from app import app
 import CardReader
@@ -15,6 +12,7 @@ import CardReader
 CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
 
 posts = []
+pk = None
 
 def fetch_posts():
     get_chain_address = "{}/chain".format(CONNECTED_NODE_ADDRESS)
@@ -24,18 +22,46 @@ def fetch_posts():
         chain = json.loads(response.content)
         for block in chain["chain"]:
             for tx in block["transactions"]:
-                tx["index"] = block["index"]
-                tx["hash"] = block["previous_hash"]
-                content.append(tx)
+                ty = {}
+                ty["index"] = block["index"]
+                ty["hash"] = block["previous_hash"]
+                ty["timestamp"] = tx["timestamp"]
+                print(tx)
+                new_tx_address = "{}/api/profile".format(CONNECTED_NODE_ADDRESS)
+                p1,status1 = requests.post(new_tx_address, headers={'Content-type': 'application/json'}, json={'pubkey': tx['publicOne']}).json()
+                p2,status2 = requests.post(new_tx_address, headers={'Content-type': 'application/json'}, json={'pubkey': tx['publicTwo']}).json()
+                print(status1,status2)
+                if status1 == 200 and status2 == 200:
+                    p = p1['person']
+
+                    ty['one'] = { "publicKey":tx['publicOne'],
+                                  "lastname": p['lastname'],
+                                  "firstname": p['firstname'],
+                                  "email": p['email'],
+                                  "phonenr": p['phonenr'],
+                                  "date_created": p['date_created']
+                    }
+                    p = p2['person']
+                    ty['two'] = {"publicKey": tx['publicTwo'],
+                                 "lastname": p['lastname'],
+                                 "firstname": p['firstname'],
+                                 "email": p['email'],
+                                 "phonenr": p['phonenr'],
+                                 "date_created": p['date_created']
+                                 }
+                    print(ty)
+                content.append(ty)
 
         global posts
         posts = sorted(content, key=lambda k: k['timestamp'],
                        reverse=True)
 
+
 @app.route('/')
 def index():
     new_tx_address = "{}/".format(CONNECTED_NODE_ADDRESS)
     return requests.get(new_tx_address).text
+
 
 @app.route('/register')
 def register():
@@ -47,17 +73,26 @@ def login():
     new_tx_address = "{}/login".format(CONNECTED_NODE_ADDRESS)
     return requests.get(new_tx_address).text
 
-@app.route('/login', methods=['POST'])
+@app.route('/me', methods=['GET','POST'])
 def submit_login():
+    global pk
     new_tx_address = "{}/login".format(CONNECTED_NODE_ADDRESS)
-    reader = CardReader.initReading()
-    publicOne = CardReader.read_public_key(reader, 1)
-    if CardReader.auth(reader, publicOne):
-        return requests.post(new_tx_address,headers={'Content-type': 'application/json'},json={'pubkey': publicOne.hex()}).text
-    else:
-        return "PubKey not found."
+    if pk:
+        req = requests.post(new_tx_address, headers={'Content-type': 'application/json'}, json={'pubkey': pk.hex()})
+        return req.text
 
-    return redirect('/')
+    reader = CardReader.initReading()
+    if reader:
+        pubkey = CardReader.read_public_key(reader, 1)
+
+        if CardReader.auth(reader, pubkey):
+            req = requests.post(new_tx_address,headers={'Content-type': 'application/json'},json={'pubkey': pubkey.hex()})
+            pk = pubkey
+            return req.text
+        else:
+            return "PubKey not found."
+    else:
+        return "No Card found!"
 
 @app.route('/register', methods=['POST'])
 def submit_register():
@@ -73,22 +108,22 @@ def submit_register():
     if pubkey is None:
         return "No pubkey!"
     else:
+        global pk
+        pk = pubkey
         firstname = request.form['firstname']
         lastname = request.form['lastname']
         phonenr = request.form['phonenr']
         email = request.form['email']
         return requests.post(new_tx_address,headers={'Content-type': 'application/json'},json={'pubkey': pubkey.hex(), 'firstname': firstname, 'lastname': lastname, 'email': email, 'phonenr': phonenr}).text
-    return redirect('/')
-'''
-@app.route('/')
-def index():
+
+@app.route('/display')
+def display():
     fetch_posts()
     return render_template('index.html',
                            title='ChainMeUp',
                            posts=posts,
                            node_address=CONNECTED_NODE_ADDRESS,
                            readable_time=timestamp_to_string)
-'''
 
 
 @app.route('/submit', methods=['POST'])
@@ -96,27 +131,30 @@ def submit_textarea():
     new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
 
     reader = CardReader.initReading()
+    if reader:
+        global pk
+        publicOne = pk
+        publicTwo = CardReader.read_public_key(reader, 1)
 
-    publicOne = 'None'
-    publicTwo = CardReader.read_public_key(reader, 1)
+        if publicOne != publicTwo:
 
-    json_object = {'publicOne': publicOne,
-                   'publicTwo': publicTwo.hex(),
-                   'timestamp': time.time()}
+            json_object = {'publicOne': publicOne.hex(),
+                           'publicTwo': publicTwo.hex(),
+                           'timestamp': time.time()}
 
-    hash, sign = CardReader.generateSignature(reader, json_object)
+            hash, sign = CardReader.generateSignature(reader, json_object)
 
-    if CardReader.verifyPub(reader, publicTwo, hash, sign):
-        requests.post(new_tx_address,
-                      headers={'Content-type': 'application/json'},
-                      json=json_object)
+            if CardReader.verifyPub(reader, publicTwo, hash, sign):
+                requests.post(new_tx_address,
+                              headers={'Content-type': 'application/json'},
+                              json=json_object)
 
-    return redirect('/')
+    return redirect('/me')
 
-@app.route('/newnode', methods=['POST'])
-def submit_textarega():
-    new_tx_address = "{}/register_node".format(CONNECTED_NODE_ADDRESS)
-    requests.post(new_tx_address, headers={'Content-type': 'application/json'}, json={'node_address': 'http://127.0.0.1:8000'})
+@app.route('/logout')
+def logout():
+    global pk
+    pk = None
     return redirect('/')
 
 def timestamp_to_string(epoch_time):

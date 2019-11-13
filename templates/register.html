@@ -2,30 +2,18 @@
 
 
 {% block head %}
-    <head>Chain me up</head>
 {% endblock %}
 
 {% block body %}
-    <h1>Register page</h1>
-
- <div class="form">
-        <form action="/register" method="POST">
-            <a>Place your card on the reader in order to import your keys.</a>
-<br>
-            <a>lastname:</a>
-            <input type="text" name="lastname" id="lastname">
-<br>
-            <a>Firstname</a>
-            <input type="text" name="firstname" id="firstname">
-<br>
-            <a>Email</a>
-            <input type="text" name="email" id="email">
-<br>
-            <a>Phone Nr:</a>
-            <input type="text" name="phonenr" id="phonenr">
-<br>
-
-            <input type="submit" value="Add contact">
-        </form>
-    </div>
+     <form class="text-center p-5" method="post" action="/register">
+        <p class="h1 mb-4">Register a new Account</p>
+        <input type="text" class="form-control mb-4" placeholder="Firstname" name="firstname" id="firstname">
+        <input type="text" class="form-control mb-4" placeholder="lastname" name="lastname" id="lastname">
+        <input type="email" class="form-control mb-4" placeholder="Email" name="email" id="email">
+        <input type="tel" class="form-control mb-4" placeholder="Tel." name="phonenr" id="phonenr">
+        <button class="btn btn-block btn-outline-dark" type="submit">Register with Card</button>
+        <p>Already got an account ?
+            <a href="/login">Login</a>
+        </p>
+     </form>
 {% endblock %}

@@ -12,7 +12,8 @@ import json
 
 def initReading():
     reader = get_reader()
-    activate_card(reader)
+    if reader:
+        activate_card(reader)
     return reader
 
 
