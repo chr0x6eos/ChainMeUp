@@ -14,7 +14,7 @@ CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
 posts = []
 pk = None
 
-def fetch_posts():
+def fetch_posts(isFiltered=False):
     get_chain_address = "{}/chain".format(CONNECTED_NODE_ADDRESS)
     response = requests.get(get_chain_address)
     if response.status_code == 200:
@@ -53,11 +53,17 @@ def fetch_posts():
                 content.append(ty)
 
         global posts
-        posts = sorted(content, key=lambda k: k['timestamp'],
+
+        if isFiltered:
+            _posts = sorted(content, key=lambda k: k['timestamp'],
                        reverse=True)
+            posts = list(filter(lambda k: k['one']['publicKey'] == pk,_posts))
+        else:
+            posts = sorted(content, key=lambda k: k['timestamp'],
+                           reverse=True)
 
 
-@app.route('/')
+@app.route('/display')
 def index():
     new_tx_address = "{}/".format(CONNECTED_NODE_ADDRESS)
     return requests.get(new_tx_address).text
@@ -116,7 +122,7 @@ def submit_register():
         email = request.form['email']
         return requests.post(new_tx_address,headers={'Content-type': 'application/json'},json={'pubkey': pubkey.hex(), 'firstname': firstname, 'lastname': lastname, 'email': email, 'phonenr': phonenr}).text
 
-@app.route('/display')
+@app.route('/')
 def display():
     fetch_posts()
     return render_template('index.html',
