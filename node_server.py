@@ -7,6 +7,7 @@ import time
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, request, session, make_response, render_template, jsonify
 import requests
+from flask import redirect
 import blocksec2go
 
 import CardReader
@@ -132,6 +133,7 @@ def new_transaction():
     person = Person.query.get(tx_data['publicTwo'])
     if person:
         blockchain.add_new_transaction(tx_data)
+        mine_unconfirmed_transactions()
         return "Success", 201
     else:
         return "User is not yet registered!"
@@ -148,8 +150,9 @@ def get_chain():
 @app.route('/mine', methods=['POST'])
 def mine_unconfirmed_transactions():
     result = blockchain.mine()
+    print(result)
     if not result:
-        return "No transactions to mine"
+        return "Error!"
     return "Block #{} is mined.".format(result)
 
 
