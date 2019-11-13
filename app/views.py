@@ -60,7 +60,7 @@ def fetch_posts(isFiltered=True):
             #posts = list(filter(lambda k: k['one']['publicKey'] == pk, _posts))
             #lambda k: print(k['one']['publicKey']), _posts
             _posts = []
-            if pk is not None:
+            if pk is not None and pk != '':
                 for k in content:
                     if k['one']['publicKey'] == pk.hex():
                         _posts.append(k)
@@ -134,10 +134,17 @@ def submit_register():
 
 @app.route('/')
 def display():
-    fetch_posts()
+    filter = request.args.get('filter')
+    if not filter or filter == 'True':
+        filter = True
+    else:
+        filter = False
+
+    fetch_posts(filter)
     return render_template('index.html',
                            title='ChainMeUp',
                            posts=posts,
+                           filter=filter,
                            node_address=CONNECTED_NODE_ADDRESS,
                            readable_time=timestamp_to_string)
 
