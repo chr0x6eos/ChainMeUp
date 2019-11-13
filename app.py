@@ -1,13 +1,8 @@
 import os
-
-from flask import Flask, render_template, url_for, request, redirect, make_response, session
-#from flask.ext.session import Session
+from flask import Flask, render_template, request, make_response, session
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import CardReader
-
-CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
-posts = []
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
@@ -27,11 +22,11 @@ class Person(db.Model):
 
 @app.route('/', methods=['GET'])
 def index():
-
+    response = make_response(render_template('index.html'))
     session.clear()
 
     if request.method == "GET":
-        return render_template('index.html')
+        return response
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -52,14 +47,14 @@ def login():
         if person is not None:
             if CardReader.auth(reader, pubkey):
 
-                #person = Person.query.all()
-                session['pubkey'] = pubkey
-                return render_template('main.html', person=person)
+                response = make_response(render_template('main.html', person=person))
+                session['pk'] = pubkey
+
+                return response
             else:
                 return "Error, wrong card on key reader"
         else:
             return "PubKey not registered"
-
 
 
 @app.route("/register", methods=['POST', 'GET'])
@@ -89,7 +84,7 @@ def register():
             db.session.commit()
 
             response = make_response(render_template('main.html',person=new_person))
-            response.set_cookie('pk', pubkey)
+            session['pk'] = pubkey
 
             return response
 
@@ -103,29 +98,6 @@ def register():
         people = Person.query.all()
         return render_template('main.html', people=people)
 
-
-@app.route('/logout', methods=['GET'])
-def logout():
-    session.clear()
-    return render_template('/')
-
-''''     
-def fetch_posts():
-    get_chain_address = "{}/chain".format(CONNECTED_NODE_ADDRESS)
-    response = requests.get(get_chain_address)
-    if response.status_code == 200:
-        content = []
-        chain = json.loads(response.content)
-        for block in chain["chain"]:
-            for tx in block["transactions"]:
-                tx["index"] = block["index"]
-                tx["hash"] = block["previous_hash"]
-                content.append(tx)
-
-        global posts
-        posts = sorted(content, key=lambda k: k['timestamp'],
-                       reverse=True)
-'''
 
 if __name__ == "__main__":
     app.config.update(
