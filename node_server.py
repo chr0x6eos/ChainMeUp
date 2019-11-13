@@ -102,42 +102,6 @@ class Blockchain:
         announce_new_block(new_block)
         return new_block.index
 
-def get_reader():
-  reader = None
-  reader_name = 'Identiv uTrust 3700 F'
-  while(reader == None):
-    try:
-      reader = blocksec2go.find_reader(reader_name)
-      print('Found the specified reader and a card!', end='\r')
-    except Exception as details:
-      if('No reader found' == str(details)):
-        print('No card reader found!     ', end='\r')
-      elif('No card on reader' == str(details)):
-        print('Found reader, but no card!', end='\r')
-      else:
-        print('ERROR: ' + str(details))
-        raise SystemExit
-  return reader
-
-def activate_card(reader):
-  try:
-    blocksec2go.select_app(reader)
-    print('Found the specified reader and a Blockchain Security 2Go card!')
-  except Exception as details:
-    print('ERROR: ' + str(details))
-    raise SystemExit
-
-def get_public_key(reader, key_id):
-  try:
-    if(blocksec2go.is_key_valid(reader, key_id)):
-      global_counter, counter, key = blocksec2go.get_key_info(reader, key_id)
-      return key
-    else:
-      raise RuntimeError('Key_id is invalid!')
-  except Exception as details:
-    print('ERROR: ' + str(details))
-    raise SystemExit
-
 app = Flask(__name__)
 
 blockchain = Blockchain()
@@ -148,31 +112,14 @@ peers = set()
 @app.route('/new_transaction', methods=['POST'])
 def new_transaction():
     # REQUIRED: Get Public Key
-
-    reader = get_reader()
-    activate_card(reader)
-
-    publicTwo = get_public_key(reader, 1)
-    tx_data = {'publicOne': 'xxx', 'publicTwo': publicTwo.hex()}
-    required_fields = ["publicOne", "publicTwo"]
+    tx_data = request.get_json()
+    required_fields = ["publicOne", "publicTwo", "timestamp"]
 
     for field in required_fields:
         if not tx_data.get(field):
             return "Invlaid transaction data", 404
 
-    tx_data["timestamp"] = time.time()
-
-    block_string = json.dumps(tx_data, sort_keys=True)
-    hash_object = sha256(block_string.encode())
-    hash = hash_object.digest()
-
-    global_counter, counter, signature = blocksec2go.generate_signature(reader, 1, hash)
-
-    if blocksec2go.verify_signature(publicTwo, hash, signature):
-        blockchain.add_new_transaction(tx_data)
-    else:
-        return "Wrong Signature", 401
-
+    blockchain.add_new_transaction(tx_data)
     return "Success", 201
 
 @app.route('/chain', methods=['GET'])
@@ -200,7 +147,6 @@ def register_new_peers():
         return "Invalid data", 400
 
     peers.add(node_address)
-
     return get_chain()
 
 
@@ -292,4 +238,4 @@ def announce_new_block(block):
         url = "{}add_block".format(peer)
         requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
 
-app.run(debug=True, port=8000)
+app.run(host='0.0.0.0',debug=True, port=8000)

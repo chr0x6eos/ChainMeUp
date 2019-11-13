@@ -1,5 +1,9 @@
 import datetime
 import json
+import os
+import time
+from hashlib import sha256
+
 import blocksec2go
 
 import requests
@@ -63,14 +67,11 @@ def fetch_posts():
         posts = sorted(content, key=lambda k: k['timestamp'],
                        reverse=True)
 
-
 @app.route('/')
 def index():
-    print(blocksec2go.readers())
     fetch_posts()
     return render_template('index.html',
-                           title='YourNet: Decentralized '
-                                 'content sharing',
+                           title='ChainMeUp',
                            posts=posts,
                            node_address=CONNECTED_NODE_ADDRESS,
                            readable_time=timestamp_to_string)
@@ -80,11 +81,34 @@ def index():
 def submit_textarea():
     new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
 
-    requests.post(new_tx_address,
-                  headers={'Content-type': 'application/json'})
+    reader = get_reader()
+    activate_card(reader)
+
+    publicOne = 'None'
+    publicTwo = get_public_key(reader, 1)
+
+    json_object = {'publicOne': publicOne,
+                   'publicTwo': publicTwo.hex(),
+                   'timestamp': time.time()}
+
+    block_string = json.dumps(json_object, sort_keys=True)
+    hash_object = sha256(block_string.encode())
+    hash = hash_object.digest()
+
+    global_counter, counter, signature = blocksec2go.generate_signature(reader, 1, hash)
+
+    if blocksec2go.verify_signature(publicTwo, hash, signature):
+        requests.post(new_tx_address,
+                      headers={'Content-type': 'application/json'},
+                      json=json_object)
 
     return redirect('/')
 
+@app.route('/newnode', methods=['POST'])
+def submit_textarega():
+    new_tx_address = "{}/register_node".format(CONNECTED_NODE_ADDRESS)
+    requests.post(new_tx_address, headers={'Content-type': 'application/json'}, json={'node_address': 'http://127.0.0.1:8000'})
+    return redirect('/')
 
 def timestamp_to_string(epoch_time):
     return datetime.datetime.fromtimestamp(epoch_time).strftime('%H:%M')
