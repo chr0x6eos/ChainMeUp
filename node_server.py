@@ -273,11 +273,12 @@ def login():
     if request.method == 'POST':
         json_object = request.get_json()
         pubkey = json_object['pubkey']
+        print("pubkey",pubkey)
         if pubkey is not None:
             person = Person.query.get(pubkey)
         else:
             return "No or invalid pub!"
-
+        print(person)
         if person is not None:
             response = make_response(render_template('main.html', person=person, node_address="127.0.0.1:8000"))
             return response

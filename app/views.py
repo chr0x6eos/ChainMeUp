@@ -141,19 +141,19 @@ def submit_textarea():
         global pk
         publicOne = pk
         publicTwo = CardReader.read_public_key(reader, 1)
+        if publicOne is not None and publicTwo is not None:
+            if publicOne != publicTwo:
 
-        if publicOne != publicTwo:
+                json_object = {'publicOne': publicOne.hex(),
+                               'publicTwo': publicTwo.hex(),
+                               'timestamp': time.time()}
 
-            json_object = {'publicOne': publicOne.hex(),
-                           'publicTwo': publicTwo.hex(),
-                           'timestamp': time.time()}
+                hash, sign = CardReader.generateSignature(reader, json_object)
 
-            hash, sign = CardReader.generateSignature(reader, json_object)
-
-            if CardReader.verifyPub(reader, publicTwo, hash, sign):
-                requests.post(new_tx_address,
-                              headers={'Content-type': 'application/json'},
-                              json=json_object)
+                if CardReader.verifyPub(reader, publicTwo, hash, sign):
+                    requests.post(new_tx_address,
+                                  headers={'Content-type': 'application/json'},
+                                  json=json_object)
 
     return redirect('/me')
 
