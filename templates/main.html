@@ -5,19 +5,26 @@
 {% endblock %}
 
 {% block body %}
-<div class="content">
-    <h1 style="text-align: center">Chain me up</h1>
 
-    <a>Hello, {{ person.firstname }} {{ person.lastname }}</a>
-    <a>Your data:</a>
-
-    <p>{{ person.pubkey }}</p>
-    <p>Phone Nr: {{ person.phonenr }}</p>
-    <p>E-Mail: {{ person.email }}</p>
-  <p>Date Created: {{ person.date_created.date() }}</p><br>
-    <a href="/">Logout</a>
-    <br>
-    <br>
+    <form class="text-center p-2">
+        <p class="h1 mb-4">My Account</p>
+        <p class="h4 text-left">Firstname:</p>
+        <input type="text" class="form-control mb-4" placeholder="Firstname" name="firstname" id="firstname" value="{{ person.firstname }}">
+        <p class="h4 text-left">Lastname:</p>
+        <input type="text" class="form-control mb-4" placeholder="lastname" name="lastname" id="lastname" value="{{ person.lastname }}">
+        <p class="h4 text-left">E-Mail:</p>
+        <input type="email" class="form-control mb-4" placeholder="Email" name="email" id="email" value="{{ person.email }}">
+        <p class="h4 text-left">Tel. :</p>
+        <input type="tel" class="form-control mb-4" placeholder="Tel." name="phonenr" id="phonenr" value="{{ person.phonenr }}">
+        <p class="h4 text-left">PubKey::</p>
+        <input type="text" class="form-control mb-4" placeholder="PubKey" name="pubkey" id="pubkey" value="{{ person.pubkey }}">
+    </form>
+    <form class="text-center p-2" action="/submit" id="textform" method="post">
+        <input type="submit" value="Create Transaction" class="btn btn-block btn-outline-dark">
+    </form>
+    <form class="text-center p-2" action="http://{{ node_address }}/mine" id="textform2" method="post">
+        <input type="submit" value="Mine Transaction" class="btn btn-block btn-outline-dark">
+    </form>
 
     <!--
     <h1>DEBUG Fields</h1>

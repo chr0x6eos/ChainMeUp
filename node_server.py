@@ -1,10 +1,11 @@
+import socket
 from datetime import datetime
 import os
 from hashlib import sha256
 import json
 import time
 from flask_sqlalchemy import SQLAlchemy
-from flask import Flask, request, session, make_response, render_template
+from flask import Flask, request, session, make_response, render_template, jsonify
 import requests
 import blocksec2go
 
@@ -140,7 +141,7 @@ def get_chain():
                        "chain": chain_data,
                        "peers": list(peers)})
 
-@app.route('/mine', methods=['GET'])
+@app.route('/mine', methods=['POST'])
 def mine_unconfirmed_transactions():
     result = blockchain.mine()
     if not result:
@@ -272,21 +273,34 @@ def login():
     if request.method == 'POST':
         json_object = request.get_json()
         pubkey = json_object['pubkey']
-        print(pubkey)
         if pubkey is not None:
             person = Person.query.get(pubkey)
         else:
             return "No or invalid pub!"
 
         if person is not None:
-            response = make_response(render_template('main.html', person=person))
-            session['pk'] = pubkey
-
+            response = make_response(render_template('main.html', person=person, node_address="127.0.0.1:8000"))
             return response
         else:
             return "PubKey not registered"
 
+@app.route('/api/profile', methods=['POST'])
+def profile():
+    if request.method == 'POST':
+        json_object = request.get_json()
+        pubkey = json_object['pubkey']
+        if pubkey is not None:
+            person = Person.query.get(pubkey)
+        else:
+            return jsonify({"error": "No or invalid pub!", "code": "FUCK_YOU"}, 400)
+        return jsonify({"person": {"lastname": person.lastname,
+                                   "firstname": person.firstname,
+                                   "email": person.email,
+                                   "phonenr": person.phonenr,
+                                   "date_created":person.date_created
+                                   }},200)
 
+    return jsonify({"error": "Wrong method!", "code": "FUCK_YOUx2"}, 200)
 @app.route("/register", methods=['POST', 'GET'])
 def register():
     if request.method == 'POST':
@@ -311,7 +325,7 @@ def register():
             db.session.add(new_person)
             db.session.commit()
 
-            response = make_response(render_template('main.html',person=new_person))
+            response = make_response(render_template('main.html',person=new_person,node_address="127.0.0.1:8000"))
             session['pk'] = pubkey
 
             return response
@@ -324,8 +338,10 @@ def register():
 
     else:
         people = Person.query.all()
-        return render_template('main.html', people=people)
+        return render_template('main.html', people=people, node_address="127.0.0.1:8000")
 
+ip = "127.0.0.1"
+port=8000
 if __name__ == "__main__":
     app.config.update(
         # Set the secret key to a sufficiently random value
@@ -337,4 +353,4 @@ if __name__ == "__main__":
         # Set CSRF tokens to be valid for the duration of the session. This assumes you’re using WTF-CSRF protection
         WTF_CSRF_TIME_LIMIT=None
     )
-    app.run(host='0.0.0.0',debug=True, port=8000)
+    app.run(host=ip,debug=True, port=port)

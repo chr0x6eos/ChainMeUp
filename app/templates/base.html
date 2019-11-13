@@ -1,20 +1,28 @@
-<html>
-  <head>
-    <title>{{ title }}</title>
-  </head>
-  <body>
-    <div><a href="/">Home</a></div>
-    <center><h1>{{ title }}</h1></center>
-    <hr>
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    <ul>
-    {% for message in messages %}
-        <li>{{ message }} </li>
-    {% endfor %}
-    </ul>
-    {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+        <a class="navbar-brand" href="/">ChainMeUp</a>
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a href="/logout" class="btn btn-outline-light">Logout</a>
+            </li>
+            <li class="nav-item">
+                <a href="/login" class="btn btn-outline-light">Login</a>
+            </li>
+            <li class="nav-item">
+                <a href="/register" class="btn btn-outline-light">Register</a>
+            </li>
+        </ul>
+    </nav>
+
+    {% block body %}{% endblock %}
+</body>
 </html>
