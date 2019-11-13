@@ -14,7 +14,7 @@ CONNECTED_NODE_ADDRESS = "http://169.254.62.57:8000"
 posts = []
 pk = None
 
-def fetch_posts(isFiltered=False):
+def fetch_posts(isFiltered=True):
     get_chain_address = "{}/chain".format(CONNECTED_NODE_ADDRESS)
     response = requests.get(get_chain_address)
     if response.status_code == 200:
@@ -26,11 +26,11 @@ def fetch_posts(isFiltered=False):
                 ty["index"] = block["index"]
                 ty["hash"] = block["previous_hash"]
                 ty["timestamp"] = tx["timestamp"]
-                print(tx)
+                #print(tx)
                 new_tx_address = "{}/api/profile".format(CONNECTED_NODE_ADDRESS)
                 p1,status1 = requests.post(new_tx_address, headers={'Content-type': 'application/json'}, json={'pubkey': tx['publicOne']}).json()
                 p2,status2 = requests.post(new_tx_address, headers={'Content-type': 'application/json'}, json={'pubkey': tx['publicTwo']}).json()
-                print(status1,status2)
+                #print(status1,status2)
                 if status1 == 200 and status2 == 200:
                     p = p1['person']
 
@@ -49,17 +49,27 @@ def fetch_posts(isFiltered=False):
                                  "phonenr": p['phonenr'],
                                  "date_created": p['date_created']
                                  }
-                    print(ty)
+                    #print(ty)
                 content.append(ty)
 
         global posts
 
         if isFiltered:
-            _posts = sorted(content, key=lambda k: k['timestamp'],
-                       reverse=True)
-            posts = list(filter(lambda k: k['one']['publicKey'] == pk,_posts))
+            #print(_posts)
+            #print(_posts[0]['one']['publicKey'])
+            #posts = list(filter(lambda k: k['one']['publicKey'] == pk, _posts))
+            #lambda k: print(k['one']['publicKey']), _posts
+            _posts = []
+            if pk is not None:
+                for k in content:
+                    if k['one']['publicKey'] == pk.hex():
+                        _posts.append(k)
+            else:
+                # Return error
+                pass
         else:
-            posts = sorted(content, key=lambda k: k['timestamp'],
+            _posts = content
+        posts = sorted(_posts, key=lambda k: k['timestamp'],
                            reverse=True)
 
 
@@ -79,7 +89,7 @@ def login():
     new_tx_address = "{}/login".format(CONNECTED_NODE_ADDRESS)
     return requests.get(new_tx_address).text
 
-@app.route('/me', methods=['GET','POST'])
+@app.route('/me', methods=['GET', 'POST'])
 def submit_login():
     global pk
     new_tx_address = "{}/login".format(CONNECTED_NODE_ADDRESS)
@@ -141,19 +151,19 @@ def submit_textarea():
         global pk
         publicOne = pk
         publicTwo = CardReader.read_public_key(reader, 1)
+        if publicOne is not None and publicTwo is not None:
+            if publicOne != publicTwo:
 
-        if publicOne != publicTwo:
+                json_object = {'publicOne': publicOne.hex(),
+                               'publicTwo': publicTwo.hex(),
+                               'timestamp': time.time()}
 
-            json_object = {'publicOne': publicOne.hex(),
-                           'publicTwo': publicTwo.hex(),
-                           'timestamp': time.time()}
+                hash, sign = CardReader.generateSignature(reader, json_object)
 
-            hash, sign = CardReader.generateSignature(reader, json_object)
-
-            if CardReader.verifyPub(reader, publicTwo, hash, sign):
-                requests.post(new_tx_address,
-                              headers={'Content-type': 'application/json'},
-                              json=json_object)
+                if CardReader.verifyPub(reader, publicTwo, hash, sign):
+                    requests.post(new_tx_address,
+                                  headers={'Content-type': 'application/json'},
+                                  json=json_object)
 
     return redirect('/me')
 

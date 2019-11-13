@@ -279,7 +279,7 @@ def login():
             return "No or invalid pub!"
 
         if person is not None:
-            response = make_response(render_template('main.html', person=person, node_address="127.0.0.1:8000"))
+            response = make_response(render_template('main.html', person=person, node_address="169.254.62.57:8000"))
             return response
         else:
             return "PubKey not registered"
@@ -325,7 +325,7 @@ def register():
             db.session.add(new_person)
             db.session.commit()
 
-            response = make_response(render_template('main.html',person=new_person,node_address="127.0.0.1:8000"))
+            response = make_response(render_template('main.html',person=new_person,node_address="169.254.62.57:8000"))
             session['pk'] = pubkey
 
             return response
@@ -338,9 +338,9 @@ def register():
 
     else:
         people = Person.query.all()
-        return render_template('main.html', people=people, node_address="127.0.0.1:8000")
+        return render_template('main.html', people=people, node_address="169.254.62.57:8000")
 
-ip = "127.0.0.1"
+ip = "0.0.0.0"
 port=8000
 if __name__ == "__main__":
     app.config.update(
