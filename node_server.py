@@ -1,9 +1,14 @@
+from datetime import datetime
+import os
 from hashlib import sha256
 import json
 import time
-from flask import Flask, request
+from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, request, session, make_response, render_template
 import requests
 import blocksec2go
+
+import CardReader
 
 
 class Block:
@@ -103,6 +108,9 @@ class Blockchain:
         return new_block.index
 
 app = Flask(__name__)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+db = SQLAlchemy(app)
 
 blockchain = Blockchain()
 blockchain.create_genesis_block()
@@ -238,4 +246,87 @@ def announce_new_block(block):
         url = "{}add_block".format(peer)
         requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
 
-app.run(host='0.0.0.0',debug=True, port=8000)
+class Person(db.Model):
+    pubkey = db.Column(db.String(256), primary_key=True)
+    lastname = db.Column(db.String(20), nullable=False)
+    firstname = db.Column(db.String(20), nullable=False)
+    phonenr = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(30), nullable=False)
+    date_created = db.Column(db.DateTime, default=datetime.now())
+
+    def __repr__(self):
+        return '<People %r>' % self.pubkey
+@app.route('/', methods=['GET'])
+def index():
+    response = make_response(render_template('index.html'))
+    session.clear()
+
+    if request.method == "GET":
+        return response
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return render_template('login.html')
+
+    if request.method == 'POST':
+        json_object = request.get_json()
+        pubkey = json_object['pubkey']
+        print(pubkey)
+        if pubkey is not None:
+            person = Person.query.get(pubkey)
+        else:
+            return "No or invalid pub!"
+
+        if person is not None:
+            response = make_response(render_template('main.html', person=person))
+            session['pk'] = pubkey
+
+            return response
+        else:
+            return "PubKey not registered"
+
+
+@app.route("/register", methods=['POST', 'GET'])
+def register():
+    if request.method == 'POST':
+        json_object = request.get_json()
+        pubkey = json_object['pubkey']
+        firstname = json_object['firstname']
+        lastname = json_object['lastname']
+        phonenr = json_object['phonenr']
+        email = json_object['email']
+
+        new_person = Person(pubkey=pubkey, firstname=firstname, lastname=lastname, phonenr=phonenr, email=email,
+                                date_created=datetime.now())
+        try:
+            db.session.add(new_person)
+            db.session.commit()
+
+            response = make_response(render_template('main.html',person=new_person))
+            session['pk'] = pubkey
+
+            return response
+
+        except Exception as ex:
+            raise ex
+
+    elif request.method == 'GET':
+        return render_template('register.html')
+
+    else:
+        people = Person.query.all()
+        return render_template('main.html', people=people)
+
+if __name__ == "__main__":
+    app.config.update(
+        # Set the secret key to a sufficiently random value
+        SECRET_KEY=os.urandom(24),
+        # Set the session cookie to be secure
+        SESSION_COOKIE_SECURE=True,
+        # Set the session cookie for our app to a unique name
+        SESSION_COOKIE_NAME='ChainMeUP-WebSession',
+        # Set CSRF tokens to be valid for the duration of the session. This assumes you’re using WTF-CSRF protection
+        WTF_CSRF_TIME_LIMIT=None
+    )
+    app.run(host='0.0.0.0',debug=True, port=8000)

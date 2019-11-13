@@ -34,12 +34,61 @@ def fetch_posts():
 
 @app.route('/')
 def index():
+    new_tx_address = "{}/".format(CONNECTED_NODE_ADDRESS)
+    return requests.get(new_tx_address).text
+
+@app.route('/register')
+def register():
+    new_tx_address = "{}/register".format(CONNECTED_NODE_ADDRESS)
+    return requests.get(new_tx_address).text
+
+@app.route('/login')
+def login():
+    new_tx_address = "{}/login".format(CONNECTED_NODE_ADDRESS)
+    return requests.get(new_tx_address).text
+
+@app.route('/login', methods=['POST'])
+def submit_login():
+    new_tx_address = "{}/login".format(CONNECTED_NODE_ADDRESS)
+    reader = CardReader.initReading()
+    publicOne = CardReader.read_public_key(reader, 1)
+    if CardReader.auth(reader, publicOne):
+        return requests.post(new_tx_address,headers={'Content-type': 'application/json'},json={'pubkey': publicOne.hex()}).text
+    else:
+        return "PubKey not found."
+
+    return redirect('/')
+
+@app.route('/register', methods=['POST'])
+def submit_register():
+    new_tx_address = "{}/register".format(CONNECTED_NODE_ADDRESS)
+    reader = CardReader.initReading()
+    if reader is None:
+        return "No reader connected!"
+    if not CardReader.initCard(reader):
+        return "Card not writeable or a user is already registered with this card!"
+
+    pubkey = CardReader.read_public_key(reader, 1)
+
+    if pubkey is None:
+        return "No pubkey!"
+    else:
+        firstname = request.form['firstname']
+        lastname = request.form['lastname']
+        phonenr = request.form['phonenr']
+        email = request.form['email']
+        return requests.post(new_tx_address,headers={'Content-type': 'application/json'},json={'pubkey': pubkey.hex(), 'firstname': firstname, 'lastname': lastname, 'email': email, 'phonenr': phonenr}).text
+    return redirect('/')
+'''
+@app.route('/')
+def index():
     fetch_posts()
     return render_template('index.html',
                            title='ChainMeUp',
                            posts=posts,
                            node_address=CONNECTED_NODE_ADDRESS,
                            readable_time=timestamp_to_string)
+'''
 
 
 @app.route('/submit', methods=['POST'])
