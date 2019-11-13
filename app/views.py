@@ -125,9 +125,16 @@ def submit_register():
 @app.route('/')
 def display():
     fetch_posts()
+    filter = request.args.get('filter')
+    if not filter or filter == 'True':
+        filter = True
+    else:
+        filter = False
+    print(filter)
     return render_template('index.html',
                            title='ChainMeUp',
                            posts=posts,
+                           filter=filter,
                            node_address=CONNECTED_NODE_ADDRESS,
                            readable_time=timestamp_to_string)
 

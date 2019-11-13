@@ -2,6 +2,11 @@
 {% extends "base.html" %}
 {% block head %}
 <style>
+	label {
+	  display: inline-block;
+	  width: 160px;
+	  text-align: right;
+	}
 	.switch {
 	  position: relative;
 	  display: inline-block;
@@ -65,7 +70,13 @@
 {% endblock %}
 {% block body %}
 	<label class="switch">
-  		<input type="checkbox" onchange="window.location.href='/login'">
+		{% if filter == True %}
+			<label>Filtering</label>
+			<input type="checkbox" onchange="window.location.href='/?filter=False'" checked>
+		{% else %}
+			<label>Non-Filtering</label>
+			<input type="checkbox" onchange="window.location.href='/?filter=True'">
+		{% endif %}
   		<span class="slider round"></span>
 	</label>
 
