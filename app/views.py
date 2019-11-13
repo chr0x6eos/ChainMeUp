@@ -9,7 +9,7 @@ from flask import render_template, redirect, request, session
 from app import app
 import CardReader
 
-CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
+CONNECTED_NODE_ADDRESS = "http://169.254.62.57:8000"
 
 posts = []
 pk = None
