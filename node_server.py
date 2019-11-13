@@ -128,9 +128,13 @@ def new_transaction():
         if not tx_data.get(field):
             return "Invlaid transaction data", 404
 
-    blockchain.add_new_transaction(tx_data)
-    return "Success", 201
-
+    # Check if person is yet registered
+    person = Person.query.get(tx_data['publicTwo'])
+    if person:
+        blockchain.add_new_transaction(tx_data)
+        return "Success", 201
+    else:
+        return "User is not yet registered!"
 @app.route('/chain', methods=['GET'])
 def get_chain():
     consensus()
